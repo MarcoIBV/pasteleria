@@ -28,15 +28,13 @@ app.use(express.static('public'));
 // Conexión a MongoDB
 
 // Conecta a la base de datos MongoDB llamada 'pasteleria'
-mongoose.connect('mongodb://localhost:27017/pasteleria', {
-    useNewUrlParser: true,      // Usa el nuevo parser de URL
-    useUnifiedTopology: true    // Usa el nuevo motor de monitoreo de servidores
-})
-// Si la conexión es exitosa, muestra un mensaje en consola
-.then(() => console.log('Conectado a MongoDB'))
-// Si hay un error en la conexión, lo muestra en consola
-.catch(err => console.error(err));
 
+mongoose.connect('mongodb+srv://marcoivan:marco1994@cluster1.jta9mnp.mongodb.net/pasteles?retryWrites=true&w=majority&appName=Cluster1', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+.then(() => console.log('Conectado a MongoDB Atlas correctamente'))
+.catch(err => console.error('Error de conexión:', err));
 // Esquemas y Modelos
 
 // Define el esquema para los usuarios
