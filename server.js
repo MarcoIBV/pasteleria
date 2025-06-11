@@ -25,8 +25,8 @@ mongoose.connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 })
-.then(() => console.log('🟢 CONECTADO A MONGODB ATLAS'))
-.catch(err => console.error('🔴 ERROR DE CONEXIÓN:', err));
+.then(() => console.log('CONECTADO A MONGODB ATLAS'))
+.catch(err => console.error('ERROR DE CONEXIÓN:', err));
 
 // ESQUEMAS Y MODELOS
 const UsuarioSchema = new mongoose.Schema({
