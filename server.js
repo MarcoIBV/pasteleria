@@ -1,196 +1,133 @@
-
-// Importa el framework Express para crear el servidor web
+// IMPORTA EL FRAMEWORK EXPRESS PARA CREAR EL SERVIDOR WEB
 const express = require('express');
-// Importa Mongoose para interactuar con MongoDB
+// IMPORTA MONGOOSE PARA INTERACTUAR CON MONGODB
 const mongoose = require('mongoose');
-
-// Importa bcrypt para encriptar contraseñas
+// IMPORTA BCRYPT PARA ENCRIPTAR CONTRASEÑAS
 const bcrypt = require('bcrypt');
-// Importa cors para permitir solicitudes de diferentes dominios
+// IMPORTA CORS PARA PERMITIR SOLICITUDES DE DIFERENTES DOMINIOS
 const cors = require('cors');
-// Importa body-parser para procesar datos JSON en las solicitudes
+// IMPORTA BODY-PARSER PARA PROCESAR DATOS JSON EN LAS SOLICITUDES
 const bodyParser = require('body-parser');
 
-// Crea una instancia de la aplicación Express
+// CREA UNA INSTANCIA DE LA APLICACIÓN EXPRESS
 const app = express();
-// Define el puerto donde se ejecutará el servidor
-const PORT = 3000;
 
-// Middleware
+// CAMBIO IMPORTANTE PARA RAILWAY: USA process.env.PORT
+const PORT = process.env.PORT || 3000; // USA EL PUERTO QUE ASIGNE RAILWAY O LOCAL 3000
 
-// Habilita CORS para permitir peticiones desde otros orígenes
-app.use(cors());
-// Permite que Express entienda datos en formato JSON en las solicitudes
-app.use(bodyParser.json());
-// Sirve archivos estáticos desde la carpeta 'public'
-app.use(express.static('public'));
+// MIDDLEWARE
+app.use(cors()); // HABILITA CORS
+app.use(bodyParser.json()); // PERMITE PARSEAR JSON
+app.use(express.static('public')); // SIRVE ARCHIVOS ESTÁTICOS DESDE "public"
 
-// Conexión a MongoDB
-
-// Conecta a la base de datos MongoDB llamada 'pasteleria'
-
-mongoose.connect('mongodb+srv://marcoivan:marco1994@cluster1.jta9mnp.mongodb.net/pasteles?retryWrites=true&w=majority&appName=Cluster1', {
+// CONEXIÓN A MONGODB ATLAS USANDO VARIABLE DE ENTORNO
+mongoose.connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 })
-.then(() => console.log('Conectado a MongoDB Atlas correctamente'))
-.catch(err => console.error('Error de conexión:', err));
-// Esquemas y Modelos
+.then(() => console.log('🟢 CONECTADO A MONGODB ATLAS'))
+.catch(err => console.error('🔴 ERROR DE CONEXIÓN:', err));
 
-// Define el esquema para los usuarios
+// ESQUEMAS Y MODELOS
 const UsuarioSchema = new mongoose.Schema({
-    nombre: String,     // Nombre del usuario
-    email: String,      // Correo electrónico del usuario
-    password: String    // Contraseña encriptada del usuario
+    nombre: String,
+    email: String,
+    password: String
 });
-
-// Crea el modelo Usuario basado en el esquema anterior
 const Usuario = mongoose.model('Usuario', UsuarioSchema);
 
-// Define el esquema para los pasteles
 const PastelSchema = new mongoose.Schema({
-    nombre: String,     // Nombre del pastel
-    precio: Number      // Precio del pastel
+    nombre: String,
+    precio: Number
 });
-// Crea el modelo Pastel basado en el esquema anterior
 const Pastel = mongoose.model('Pastel', PastelSchema);
 
-// Define el esquema para los empleados
 const EmpleadoSchema = new mongoose.Schema({
-    nombre: String,     // Nombre del empleado
-    rol: String         // Rol del empleado (ejemplo: repostero, vendedor)
+    nombre: String,
+    rol: String
 });
-// Crea el modelo Empleado basado en el esquema anterior
 const Empleado = mongoose.model('Empleado', EmpleadoSchema);
 
-// Define el esquema para los pedidos
 const PedidoSchema = new mongoose.Schema({
-    cliente: String,    // Nombre del cliente que hace el pedido
-    producto: String    // Producto solicitado en el pedido
+    cliente: String,
+    producto: String
 });
-// Crea el modelo Pedido basado en el esquema anterior
 const Pedido = mongoose.model('Pedido', PedidoSchema);
 
-// Rutas de autenticación
+// RUTAS DE AUTENTICACIÓN
 
-// Ruta para registrar un nuevo usuario
 app.post('/registro', async (req, res) => {
-    // Extrae nombre, email y password del cuerpo de la solicitud
     const { nombre, email, password } = req.body;
-    // Encripta la contraseña antes de guardarla
     const hashedPassword = await bcrypt.hash(password, 10);
-    // Crea un nuevo usuario con los datos recibidos y la contraseña encriptada
     const nuevoUsuario = new Usuario({ nombre, email, password: hashedPassword });
-    // Guarda el usuario en la base de datos
     await nuevoUsuario.save();
-    // Responde con un mensaje de éxito y código 201 (creado)
     res.status(201).send('Usuario registrado');
 });
 
-// Ruta para iniciar sesión
 app.post('/login', async (req, res) => {
-    // Extrae email y password del cuerpo de la solicitud
     const { email, password } = req.body;
-    // Busca un usuario con el email proporcionado
     const usuario = await Usuario.findOne({ email });
-    // Si no existe el usuario, responde con error 401 (no autorizado)
     if (!usuario) return res.status(401).send('Usuario no encontrado');
-    // Compara la contraseña proporcionada con la almacenada (encriptada)
     const valid = await bcrypt.compare(password, usuario.password);
-    // Si la contraseña no es válida, responde con error 401
     if (!valid) return res.status(401).send('Contraseña incorrecta');
-    // Si todo es correcto, responde con mensaje de éxito
     res.send('Inicio de sesión exitoso');
 });
 
-// CRUD Pasteles
+// CRUD PASTELES
 
-// Ruta para obtener todos los pasteles
 app.get('/api/pasteles', async (req, res) => {
-    // Busca todos los pasteles en la base de datos
     const pasteles = await Pastel.find();
-    // Devuelve la lista de pasteles en formato JSON
     res.json(pasteles);
 });
 
-// Ruta para crear un nuevo pastel
 app.post('/api/pasteles', async (req, res) => {
-    // Crea un nuevo pastel con los datos recibidos en la solicitud
     const nuevo = new Pastel(req.body);
-    // Guarda el pastel en la base de datos
     await nuevo.save();
-    // Responde con mensaje de éxito y código 201 (creado)
     res.status(201).send('Pastel creado');
 });
 
-// Ruta para eliminar un pastel por su ID
 app.delete('/api/pasteles/:id', async (req, res) => {
-    // Elimina el pastel cuyo ID se recibe en la URL
     await Pastel.findByIdAndDelete(req.params.id);
-    // Responde con mensaje de éxito
     res.send('Pastel eliminado');
 });
 
-// CRUD Empleados
+// CRUD EMPLEADOS
 
-// Ruta para obtener todos los empleados
 app.get('/api/empleados', async (req, res) => {
-    // Busca todos los empleados en la base de datos
     const empleados = await Empleado.find();
-    // Devuelve la lista de empleados en formato JSON
     res.json(empleados);
 });
 
-// Ruta para crear un nuevo empleado
 app.post('/api/empleados', async (req, res) => {
-    // Crea un nuevo empleado con los datos recibidos en la solicitud
     const nuevo = new Empleado(req.body);
-    // Guarda el empleado en la base de datos
     await nuevo.save();
-    // Responde con mensaje de éxito y código 201 (creado)
     res.status(201).send('Empleado agregado');
 });
 
-// Ruta para eliminar un empleado por su ID
 app.delete('/api/empleados/:id', async (req, res) => {
-    // Elimina el empleado cuyo ID se recibe en la URL
     await Empleado.findByIdAndDelete(req.params.id);
-    // Responde con mensaje de éxito
     res.send('Empleado eliminado');
 });
 
-// CRUD Pedidos
+// CRUD PEDIDOS
 
-// Ruta para obtener todos los pedidos
 app.get('/api/pedidos', async (req, res) => {
-    // Busca todos los pedidos en la base de datos
     const pedidos = await Pedido.find();
-    // Devuelve la lista de pedidos en formato JSON
     res.json(pedidos);
 });
 
-// Ruta para crear un nuevo pedido
 app.post('/api/pedidos', async (req, res) => {
-    // Crea un nuevo pedido con los datos recibidos en la solicitud
     const nuevo = new Pedido(req.body);
-    // Guarda el pedido en la base de datos
     await nuevo.save();
-    // Responde con mensaje de éxito y código 201 (creado)
     res.status(201).send('Pedido registrado');
 });
 
-// Ruta para eliminar un pedido por su ID
 app.delete('/api/pedidos/:id', async (req, res) => {
-    // Elimina el pedido cuyo ID se recibe en la URL
     await Pedido.findByIdAndDelete(req.params.id);
-    // Responde con mensaje de éxito
     res.send('Pedido eliminado');
 });
 
-// Iniciar servidor
-
-// Inicia el servidor y lo pone a escuchar en el puerto definido
+// INICIAR SERVIDOR CON PUERTO DINÁMICO PARA PRODUCCIÓN
 app.listen(PORT, () => {
-    // Muestra en consola la URL donde está corriendo el servidor
-    console.log(`Servidor escuchando en http://localhost:${PORT}`);
+    console.log(`🚀 Servidor escuchando en http://localhost:${PORT}`);
 });
